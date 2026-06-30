@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Birthday Mission - Level Up</title>
+    <style>
+        /* --- THEME & BACKGROUND --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            min-height: 100vh; width: 100%; background-color: #000; color: #ffffff;
+            font-family: 'Courier New', Courier, monospace; display: flex;
+            justify-content: center; align-items: center; overflow-x: hidden;
+            transition: background 2s ease-in-out; -webkit-tap-highlight-color: transparent;
+        }
+        
+        .navy-bg { background: radial-gradient(circle at center, #001d3d 0%, #000000 100%) !important; }
+
+        .final-bg { 
+            background: linear-gradient(-45deg, #000000, #22003d, #3d001e, #000000) !important;
+            background-size: 400% 400% !important;
+            animation: finalGradientShift 10s ease infinite !important;
+        }
+        @keyframes finalGradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- UI CONTAINERS --- */
+        .page { text-align: center; z-index: 10; display: none; width: 100%; padding: 20px; }
+        .container-box {
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
+            padding: clamp(25px, 6vw, 50px); border-radius: 30px;
+            width: 95%; max-width: 500px; margin: auto; border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        h1 { color: #39ff14; letter-spacing: 2px; font-size: clamp(1.3rem, 5vw, 2.2rem); margin-bottom: 30px; }
+        .pink-text { color: #d4af37; text-shadow: 0 0 15px rgba(255, 105, 180, 0.3); }
+
+        /* --- INPUTS & BUTTONS --- */
+        input {
+            width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #333; color: #ecf3eb; border-radius: 10px; font-size: 16px; outline: none;
+        }
+        .btn-stack { display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; margin-top: 30px; }
+        .btn {
+            background: #39ff14; color: #000; padding: 15px 40px; border: none; border-radius: 12px;
+            font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s ease; width: 100%; max-width: 280px;
+        }
+        .btn:hover { background: #fff; box-shadow: 0 0 20px 5px rgba(57, 255, 20, 0.6); transform: translateY(-3px); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: rgb(3, 1, 1); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* --- GIFTS --- */
+        .gift-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 30px; }
+        .gift {
+            font-size: clamp(90px, 18vw, 140px); cursor: pointer;
+            filter: drop-shadow(0 0 12px rgba(255, 105, 180, 0.5)); transition: transform 0.3s ease;
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        
+        /* --- FIREWORKS --- */
+        .particle { position: absolute; width: 4px; height: 4px; border-radius: 50%; pointer-events: none; animation: fw 4s forwards; }
+        @keyframes fw { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; } }
+
+        /* --- THE FINALE LAYOUT --- */
+        #visual-cake { font-size: clamp(100px, 25vw, 160px); margin: 20px 0; transition: all 1.5s ease; position: relative; }
+        .candle-burning { text-shadow: 0 0 20px #ff3333; }
+        .candle-extinguished { opacity: 0.6; text-shadow: none !important; color: #444 !important; }
+
+        #cinematic-scroller {
+            height: 250px; overflow: hidden; position: relative; margin: 20px 0; display: none;
+        }
+        #scrolling-content {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            font-size: 1.05rem; line-height: 1.8; letter-spacing: 1px;
+        }
+        .flow-up-animation { animation: cinematicScroll 35s linear forwards; }
+        @keyframes cinematicScroll {
+            0% { top: 100%; }
+            100% { top: -210%; }
+        }
+
+        /* Moving Dog Styling */
+        .finale-dog-container {
+            position: absolute; bottom: 0; right: 15px;
+            width: clamp(85px, 20vw, 130px); height: auto;
+            display: none; z-index: 5; pointer-events: none;
+        }
+        .finale-dog-container img {
+            width: 100%; height: auto; display: block;
+            filter: drop-shadow(0 5px 8px rgba(0,0,0,0.4));
+            animation: gentleBreathing 5s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+        @keyframes gentleBreathing {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.06) rotate(1deg); }
+        }
+        
+        #final-nav { display: none; width: 100%; }
+        .bubbles-container {
+                position: fixed; 
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                overflow: hidden;
+                pointer-events: none;
+            }
+            .bubble {
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                background: #bdff00;
+                box-shadow: 0 0 15px #39ff14, 0 0 30px rgba(57, 255, 20, 0.5);
+                border-radius: 50%;
+            }
+            @keyframes fly1 {
+                0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(150px, -100px); } 
+                    75% { transform: translate(250px, 50px); }
+                }
+                @keyframes fly2 {
+                0%, 100% { transform: translate(0, 0); }
+                    33% { transform: translate(-100px, 150px); } 
+                    66% { transform: translate(100px, 200px); }
+                }
+                @keyframes fly3 {
+                0%, 100% { transform: translate(0, 0); }
+                    25% { transform: translate(30px, -30px); } 
+                    75% { transform: translate(-20px, 50px); }
+                    50% { transform: translate(60px, 10px); }
+                }
+                @keyframes flicker {
+                    0% { opacity: 0.4; }
+                    100% { opacity: 0.8; box-shadow: 0 0 30px 10px rgba(255, 255, 100, 0.5); }
+                }
+            }
+            .bubble:nth-child(1) { left: 5%; top: 10; animation: fly1 15s linear infinite, flicker 2s infinite }
+            .bubble:nth-child(2) { left: 12%; top: 15%; animation: fly2 9s linear infinite, flicker 1s infinite }
+            .bubble:nth-child(3) { left: 18%; top: 20%;animation: fly3 14s linear infinite, flicker 3s infinite }
+            .bubble:nth-child(4) { left: 25%; top: 30%; animation: fly2 10s linear infinite, flicker 2s infinite }
+            .bubble:nth-child(5) { left: 32%; top: 29%; animation: fly1 11s linear infinite, flicker 1s infinite }
+            .bubble:nth-child(6) { left: 40%; top: 45%; animation: fly2 16s linear infinite, flicker 3s infinite }
+            .bubble:nth-child(7) { left: 50%; top: 55%; animation: fly2 10s linear infinite, flicker 2s infinite }
+            .bubble:nth-child(8) { left: 58%; top: 49%; animation: fly1 21s linear infinite, flicker 1s infinite }
+            .bubble:nth-child(9) { left: 65%; top: 59%; animation: fly3 10s linear infinite, flicker 3s infinite }
+            .bubble:nth-child(10) { left: 72%; top: 60%; animation: fly3 15s linear infinite, flicker 2s infinite }
+            .bubble:nth-child(11) { left: 88%; top: 70%; animation: fly2 19s linear infinite, flicker 3s infinite }
+            .bubble:nth-child(12) { left: 88%; top: 39%; animation: fly1 25s linear infinite, flicker 2s infinite }
+            .bubble:nth-child(13) { left: 95%; top: 50%; animation: fly2 23s linear infinite, flicker 3s infinite }
+            .bubble:nth-child(14) { left: 45%; top: 39%; animation: fly3 21s linear infinite, flicker 1s infinite }
+            .bubble:nth-child(15) { left: 78%; top: 40%; animation: fly2 20s linear infinite, flicker 1s infinite }
+            .bubble:nth-child(16) { left: 2%; top: 50%; animation: fly1 18s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(17) { left: 15%; top: 80%; animation: fly2 12s linear infinite, flicker 1.5s infinite; }
+        .bubble:nth-child(18) { left: 30%; top: 10%; animation: fly3 20s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(19) { left: 45%; top: 90%; animation: fly1 14s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(20) { left: 60%; top: 5%; animation: fly2 16s linear infinite, flicker 1s infinite; }
+        .bubble:nth-child(21) { left: 75%; top: 95%; animation: fly3 11s linear infinite, flicker 2.5s infinite; }
+        .bubble:nth-child(22) { left: 90%; top: 15%; animation: fly1 22s linear infinite, flicker 1.2s infinite; }
+        .bubble:nth-child(23) { left: 5%; top: 75%; animation: fly2 19s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(24) { left: 25%; top: 5%; animation: fly3 13s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(25) { left: 85%; top: 85%; animation: fly1 17s linear infinite, flicker 1.5s infinite; }
+        .bubble:nth-child(26) { left: 40%; top: 20%; animation: fly2 24s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(27) { left: 55%; top: 35%; animation: fly3 15s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(28) { left: 10%; top: 40%; animation: fly1 20s linear infinite, flicker 1s infinite; }
+        .bubble:nth-child(29) { left: 80%; top: 10%; animation: fly2 16s linear infinite, flicker 2.5s infinite; }
+        .bubble:nth-child(30) { left: 95%; top: 90%; animation: fly3 22s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(31) { left: 33%; top: 55%; animation: fly1 13s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(32) { left: 66%; top: 25%; animation: fly2 19s linear infinite, flicker 1.5s infinite; }
+        .bubble:nth-child(33) { left: 12%; top: 65%; animation: fly3 11s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(34) { left: 48%; top: 12%; animation: fly1 25s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(35) { left: 77%; top: 82%; animation: fly2 14s linear infinite, flicker 1s infinite; }
+        .bubble:nth-child(36) { left: 10%; top: 10%; animation: fly3 21s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(37) { left: 20%; top: 20%; animation: fly1 15s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(38) { left: 30%; top: 30%; animation: fly2 12s linear infinite, flicker 1.5s infinite; }
+        .bubble:nth-child(39) { left: 40%; top: 40%; animation: fly3 18s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(40) { left: 50%; top: 50%; animation: fly1 23s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(41) { left: 60%; top: 60%; animation: fly2 17s linear infinite, flicker 1s infinite; }
+        .bubble:nth-child(42) { left: 70%; top: 70%; animation: fly3 19s linear infinite, flicker 2.5s infinite; }
+        .bubble:nth-child(43) { left: 80%; top: 80%; animation: fly1 16s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(44) { left: 90%; top: 90%; animation: fly2 13s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(45) { left: 15%; top: 45%; animation: fly3 22s linear infinite, flicker 1.5s infinite; }
+        .bubble:nth-child(46) { left: 35%; top: 65%; animation: fly1 14s linear infinite, flicker 3s infinite; }
+        .bubble:nth-child(47) { left: 55%; top: 85%; animation: fly2 20s linear infinite, flicker 2s infinite; }
+        .bubble:nth-child(48) { left: 75%; top: 15%; animation: fly3 15s linear infinite, flicker 1s infinite; }
+        .bubble:nth-child(49) { left: 25%; top: 55%; animation: fly1 11s linear infinite, flicker 2.5s infinite; }
+        .bubble:nth-child(50) { left: 65%; top: 95%; animation: fly2 14s linear infinite, flicker 3s infinite; }
+        /* Shake animation for wrong ID */
+        .shake {
+            animation: shakeBox 0.5s ease-in-out;
+        }
+
+        @keyframes shakeBox {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body id="main-body">
+    <audio id="bg-music" src="music.mp3" loop></audio>
+
+    <div id="page1" class="page" style="display: block;">
+        <div class="bubbles-container">
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+        </div>
+        <div class="container-box">
+            <h1>VERIFY TO ACCESS</h1>
+            <input type="text" id="user" placeholder="USER ID" autocomplete="off">
+            <div style="position: relative; width: 100%;">
+    <input type="password" id="pass" placeholder="PASSCODE" autocomplete="off" style="padding-right: 45px;">
+    <span id="togglePass" onclick="toggleVisibility()" 
+          style="position: absolute; right: 15px; top: 12px; cursor: pointer; color: #39ff14; font-size: 1.2rem; text-shadow: 0 0 10px #39ff14;">
+          🗝️
+    </span>
+</div>
+            <button class="btn" onclick="validate()">LOG IN</button>
+            <div id="error-message" style="color: #ff3131; margin-top: 15px; font-weight: bold; min-height: 20px;"></div>
+        </div>
+    </div>
+
+    <div id="page2" class="page">
+        <h1 class="pink-text">PICK YOUR GIFT</h1>
+        <div class="gift-row">
+            <div class="gift" onclick="openGift('No matter what, never stop chasing your dreams and never let your smile be taken away by silly problems. Promise?', false, 'SURE')">🎁</div>
+            <div class="gift" onclick="openGift('ARE YOU READY FOR THE LEVEL UP?', true, 'PROCEED')">🎁</div>
+            <div class="gift" onclick="openGift('Are you Happy and Excited?', false, '100%')">🎁</div>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <div class="container-box">
+            <h1 id="gift-word" class="pink-text" style="white-space: normal; line-height: 1.4;">WORD</h1>
+            <div class="btn-stack">
+                <button class="btn" id="proceed-btn" onclick="showFinal()">YES</button>
+                <button class="btn btn-secondary" id="back-btn" onclick="backToGifts()">NOT YET</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="page4" class="page">
+        <div class="container-box">
+            <div id="visual-cake" class="candle-burning">🎂🕯️</div>
+            <div id="blow-text" class="pink-text" style="font-size: 1.3rem;">Initialize sequence...</div>
+
+            <div id="cinematic-scroller">
+                <div id="scrolling-content" class="pink-text">
+                    Happy 20th Birthday, Gainimei!<br><br>
+                    Reaching this milestone is such an incredible achievement, marking the official end of your teenage years and the exciting beginning of a brand-new decade.<br><br>
+                    This is your time to explore, take bold risks, and start building the life you’ve always imagined.<br><br>
+                    You have grown into such an amazing person over the last two decades, and I am so proud of the journey you’re on.<br><br>
+                    May your twenties be filled with unforgettable adventures, deep friendships, and the courage to chase your biggest dreams.<br><br>
+                    Enjoy every single moment of being twenty—the world is truly yours for the taking!
+                </div>
+            </div>
+
+            <div class="finale-dog-container" id="dog-box">
+                <img src="dog.png" alt="Dog Icon" onerror="this.src='https://i.imgur.com/vH977rU.png'"> 
+            </div>
+            
+            <div class="btn-stack" id="final-nav">
+                <button class="btn" onclick="backToGifts()">BACK</button>
+                <button class="btn btn-secondary" onclick="restartSystem()">LOG OUT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('bg-music');
+        const body = document.getElementById('main-body');
+        
+        function validate() {
+    const userField = document.getElementById('user');
+    const errorEl = document.getElementById('error-message');
+    const loginBox = document.querySelector('.container-box');
+    
+    // Clear any previous error message
+    errorEl.innerText = "";
+
+    if(userField.value.toLowerCase() === "gainimei") {
+        audio.play().catch(() => {});
+        document.getElementById('page1').style.display = 'none';
+        body.classList.add('navy-bg'); 
+        document.getElementById('page2').style.display = 'block';
+        setInterval(launch, 800);
+    } else {
+        // Show message UNDER the button instead of a popup
+        errorEl.innerText = "ACCESS DENIED: Invalid User ID";
+        
+        // Add the shake effect for visual feedback
+        loginBox.classList.add('shake');
+        setTimeout(() => loginBox.classList.remove('shake'), 500);
+        
+        // Optional: Clear the input for next try
+        userField.value = "";
+    }
+}
+
+        function openGift(txt, isCenter, btnLabel) {
+            document.getElementById('page2').style.display = 'none';
+            document.getElementById('gift-word').innerText = txt;
+            const proceedBtn = document.getElementById('proceed-btn');
+            const backBtn = document.getElementById('back-btn');
+            
+            if(isCenter) { 
+                proceedBtn.style.display = 'block'; 
+                backBtn.innerText = "NOT YET"; 
+            } else { 
+                proceedBtn.style.display = 'none'; 
+                backBtn.innerText = btnLabel; 
+            }
+            document.getElementById('page3').style.display = 'block';
+        }
+
+        function backToGifts() {
+            // Hide everything except Page 2
+            document.getElementById('page1').style.display = 'none';
+            document.getElementById('page3').style.display = 'none';
+            document.getElementById('page4').style.display = 'none';
+            
+            // Reset background
+            body.classList.remove('final-bg');
+            body.classList.add('navy-bg');
+            
+            // Reset Finale UI so it's fresh if played again
+            document.getElementById('visual-cake').style.display = 'block';
+            document.getElementById('visual-cake').classList.remove('candle-extinguished');
+            document.getElementById('blow-text').style.display = 'block';
+            document.getElementById('cinematic-scroller').style.display = 'none';
+            document.getElementById('dog-box').style.display = 'none';
+            document.getElementById('final-nav').style.display = 'none';
+
+            document.getElementById('page2').style.display = 'block';
+        }
+
+        function showFinal() { 
+            document.getElementById('page3').style.display = 'none'; 
+            body.classList.remove('navy-bg');
+            body.classList.add('final-bg');
+            document.getElementById('page4').style.display = 'block'; 
+            startCountdown();
+        }
+
+        function startCountdown() {
+            const countdownEl = document.getElementById('blow-text');
+            const cakeEl = document.getElementById('visual-cake');
+            const scrollerEl = document.getElementById('cinematic-scroller');
+            const contentEl = document.getElementById('scrolling-content');
+            const dogBoxEl = document.getElementById('dog-box');
+            const navEl = document.getElementById('final-nav');
+            
+            setTimeout(() => { countdownEl.innerText = "Blow the candle in 3..."; }, 500);
+            setTimeout(() => { countdownEl.innerText = "Blow the candle in 2..."; }, 1500);
+            setTimeout(() => { countdownEl.innerText = "Blow the candle in 1..."; }, 2500);
+            
+            setTimeout(() => {
+                countdownEl.innerText = "BLOWN! 💨";
+                cakeEl.classList.add('candle-extinguished');
+                
+                setTimeout(() => {
+                    countdownEl.style.display = 'none';
+                    cakeEl.style.display = 'none';
+                    scrollerEl.style.display = 'block';
+                    contentEl.classList.add('flow-up-animation');
+                    
+                    setTimeout(() => {
+                        dogBoxEl.style.display = 'block';
+                        navEl.style.display = 'flex';
+                    }, 35000); 
+                }, 1500);
+            }, 3500);
+        }
+
+        function restartSystem() { location.reload(); }
+        
+        function launch() {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * (window.innerHeight * 0.5);
+            for(let i=0; i<30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle'; p.style.left = x + 'px'; p.style.top = y + 'px';
+                p.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                const a = Math.random() * Math.PI * 2; const d = Math.random() * 250;
+                p.style.setProperty('--x', Math.cos(a) * d + 'px'); p.style.setProperty('--y', Math.sin(a) * d + 'px');
+                document.body.appendChild(p); setTimeout(() => p.remove(), 4000);
+            }
+        }
+        function toggleVisibility() {
+    const passField = document.getElementById('pass');
+    const toggleIcon = document.getElementById('togglePass');
+    
+    if (passField.type === "password") {
+        passField.type = "text";
+        toggleIcon.innerText = "🔒"; // Shows a lock when characters are visible
+        toggleIcon.style.opacity = "0.7";
+    } else {
+        passField.type = "password";
+        toggleIcon.innerText = "🗝️"; // Back to eye when hidden
+        toggleIcon.style.opacity = "1";
+    }
+}
+    </script>
+</body>
+</html>
